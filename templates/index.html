@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPLidar</title>
+    <link type="text/css" href="{{ url_for('static', filename='css/style.css')}}" rel="stylesheet" />
+
+</head>
+<body>
+
+    <div class="block-1">
+        <h1>Главная страница</h1>
+        <a href="#"><button class="maps-btn">Cохраненые карты</button></a>
+    </div>
+
+    <div class="block-2">
+        <a href="#"><button class="start-btn">Cтарт</button></a>
+        <a href="#"><button class="stop-btn">Стоп</button></a>
+
+        <div class="content">
+            {% for el in data %}
+            <p>{{ el }}</p>
+            {% endfor  %}
+        </div>
+
+    </div>
+
+</body>
+</html>
