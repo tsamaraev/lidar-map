@@ -1,7 +1,8 @@
 body {
     font-family: Arial, Helvetica, sans-serif;
-    display: inline-flex;
-    width: 100%;
+    display: flex;
+    justify-content: center;
+    width: auto;
 }
 
 a {
@@ -11,16 +12,16 @@ a {
 
 .block-1 {
     border: solid;
-    width: 25%;
-    height: 1000px;
+    width: 20%;
+    height: auto;
     padding: 1%;
 }
 
 
 .block-2 {
     border: solid;
-    width: 75%;
-    height: 1000px;
+    width: 70%;
+    height: auto;
     padding: 1%;
 }
 
@@ -39,9 +40,3 @@ a {
     margin: 1%;
 }
 
-.maps-btn {
-    border: solid;
-    padding: 1%;
-    border-radius: 5px;
-    font-size: 20px;
-}

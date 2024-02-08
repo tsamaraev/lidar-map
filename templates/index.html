@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RPLidar</title>
     <link type="text/css" href="{{ url_for('static', filename='css/style.css')}}" rel="stylesheet" />
-
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvg@3.0.0/dist/browser/canvg.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/canvg/1.5/canvg.min.js"></script>
 </head>
 <body>
-
     <div class="block-1">
         <h1>Главная страница</h1>
         <a href="#"><button class="maps-btn">Cохраненые карты</button></a>
@@ -16,15 +17,119 @@
 
     <div class="block-2">
         <a href="#"><button class="start-btn">Cтарт</button></a>
-        <a href="#"><button class="stop-btn">Стоп</button></a>
+        <a href="#"><button class="stop-btn" id="showMapButton" onclick="showMap()">Стоп</button></a>
+        <button onclick="saveMap()">Сохранить карту</button>
+        <main></main>
+        <script>
+            var svgString; // Определить svgString в глобальной области видимости
+            var svgWidth; // Определить svgWidth в глобальной области видимости
+            var svgHeight; // Определить svgHeight в глобальной области видимости
 
-        <div class="content">
-            {% for el in data %}
-            <p>{{ el }}</p>
-            {% endfor  %}
-        </div>
+            function showMap() {
+                var lidarData;
 
+                // Выполнение fetch-запроса на сервер
+                fetch('http://127.0.0.1:5000/api/get_data/', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Ошибка при выполнении запроса: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Обработка данных, полученных от сервера
+                    lidarData = data;
+
+                    // Размеры холста
+                    var width = 800;
+                    var height = 900;
+
+                    // Создание холста D3
+                    var svg = d3.select("main").append("svg")
+                        .attr("width", width)
+                        .attr("height", height);
+
+                    // Отображение линий между точками
+                    svg.selectAll("line")
+                        .data(lidarData && lidarData.length > 1 ? lidarData.slice(1) : [])
+                        .enter().append("line")
+                        .attr("x1", function (d, i) {
+                            var currentPoint = polarToCartesian(d.angle, d.distance);
+                            var previousPoint = polarToCartesian(lidarData[i].angle, lidarData[i].distance);
+                            return width / 2 + previousPoint.x;
+                        })
+                        .attr("y1", function (d, i) {
+                            var currentPoint = polarToCartesian(d.angle, d.distance);
+                            var previousPoint = polarToCartesian(lidarData[i].angle, lidarData[i].distance);
+                            return height / 2 + previousPoint.y;
+                        })
+                        .attr("x2", function (d) {
+                            var point = polarToCartesian(d.angle, d.distance);
+                            return width / 2 + point.x;
+                        })
+                        .attr("y2", function (d) {
+                            var point = polarToCartesian(d.angle, d.distance);
+                            return height / 2 + point.y;
+                        })
+                        .style("stroke", "gray"); // Цвет линий
+
+                    // Отображение точек на карте
+                    svg.selectAll("circle")
+                        .data(lidarData)
+                        .enter().append("circle")
+                        .attr("cx", function (d) {
+                            var point = polarToCartesian(d.angle, d.distance);
+                            return width / 2 + point.x;
+                        })
+                        .attr("cy", function (d) {
+                            var point = polarToCartesian(d.angle, d.distance);
+                            return height / 2 + point.y;
+                        })
+                        .attr("r", 2) // Радиус точек
+                        .style("fill", "blue"); // Цвет точек
+
+                    // Получение строкового представления SVG
+                    svgString = new XMLSerializer().serializeToString(svg.node());
+                    svgWidth = width;
+                    svgHeight = height;
+                })
+                .catch(error => {
+                    console.error('Ошибка при запросе данных:', error);
+                });
+            }
+
+            function saveMap() {
+                var canvas = document.createElement("canvas");
+                canvas.width = svgWidth;
+                canvas.height = svgHeight;
+                var context = canvas.getContext("2d");
+
+                context.fillStyle = "white";
+                context.fillRect(0, 0, svgWidth, svgHeight);
+
+                canvg(canvas, svgString, {
+                    renderCallback: function () {
+                        var imgData = canvas.toDataURL("static/image/png");
+                        var link = document.createElement("a");
+                        link.href = imgData;
+                        link.download = "lidar_map.png";
+                        link.click();
+                    }
+                });
+            }
+
+            // Функция преобразования полярных координат в декартовы
+            function polarToCartesian(angle, distance) {
+                var x = distance * Math.cos(angle * Math.PI / 180);
+                var y = distance * Math.sin(angle * Math.PI / 180);
+                return { x: x, y: y };
+            }
+        </script>
     </div>
-
 </body>
 </html>
