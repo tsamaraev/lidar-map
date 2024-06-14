@@ -1,16 +1,40 @@
-from pprint import pprint
+import json
+import time
+from adafruit_rplidar import RPLidar
 
-file_path = 'lidar/lidar_data.txt'
 
-lidar_data = []
+PORT_NAME = 'COM3'  
 
-with open(file_path, 'r') as file:
-    for line in file:
-        angle, distance = map(float, line.split())
-        lidar_data.append({'angle': angle, 'distance': distance})
+
+lidar = RPLidar(None, PORT_NAME)
+
+def collect_lidar_data(lidar, num_samples=100):
+    """Функция для сбора данных с RPLidar."""
+    lidar_data = []
+    try:
+        for i, scan in enumerate(lidar.iter_scans()):
+            for (_, angle, distance) in scan:
+                lidar_data.append({'angle': angle, 'distance': distance})
+                if len(lidar_data) >= num_samples:
+                    return lidar_data
+    except KeyboardInterrupt:
+        print("Прервано пользователем")
+    finally:
+        lidar.stop()
+        lidar.disconnect()
+    return lidar_data
+
+
+lidar_data = collect_lidar_data(lidar)
+
 
 for i in range(1, len(lidar_data)):
     if lidar_data[i]['distance'] == 0:
         lidar_data[i]['distance'] = lidar_data[i-1]['distance']
 
-pprint(lidar_data)
+
+output_path = 'lidar/lidar_data.json'
+with open(output_path, 'w') as json_file:
+    json.dump(lidar_data, json_file, indent=4)
+
+print(f"Обработанные данные LiDAR сохранены в {output_path}")
